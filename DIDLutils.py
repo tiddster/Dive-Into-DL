@@ -61,9 +61,9 @@ def evaluate_accuracy(data_iter, net):
     return acc_sum / n
 
 """
-训练softmax模型
+训练模型
 """
-def trainSoftmax(net, train_iter, test_iter, loss, num_epoch, batch_size, params=None, lr = None, optimizer = None):
+def train(net, train_iter, test_iter, loss, num_epoch, batch_size, params=None, lr = None, optimizer = None):
     for epoch in range(num_epoch):
         train_l_sum, train_acc_sum, n = 0.0, 0.0, 0
         for X, y in train_iter:
@@ -72,7 +72,7 @@ def trainSoftmax(net, train_iter, test_iter, loss, num_epoch, batch_size, params
 
             if optimizer is not None:
                 optimizer.zero_grad()
-            elif params is not None and param[0].grad is not None:
+            elif params is not None and params[0].grad is not None:
                 for param in params:
                     param.grad.data.zero_()
 
@@ -89,3 +89,12 @@ def trainSoftmax(net, train_iter, test_iter, loss, num_epoch, batch_size, params
         test_acc = evaluate_accuracy(test_iter, net)
         print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f'
               % (epoch + 1, train_l_sum / n, train_acc_sum / n, test_acc))
+
+"""
+多层感知机板块-----------------------------------------------------------------
+"""
+"""
+relu激活函数
+"""
+def relu(x):
+    return torch.max(input=x, other=torch.tensor(0.0))

@@ -8,7 +8,7 @@ import sys
 
 sys.path.append("..")
 import LoadFashionMNIST as lf
-import DIDutils as did
+import DIDLutils as did
 
 # 数据读取
 train_iter, test_iter = lf.get_iter()
