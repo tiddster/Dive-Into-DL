@@ -55,4 +55,4 @@ def fit_and_plot_pytorch(weight_decay):
             optimizer_b.step()
         print('L2 norm of w:', net.weight.data.norm().item())
 
-fit_and_plot_pytorch(0.01)
+fit_and_plot_pytorch(50)
