@@ -1,5 +1,6 @@
 from torch import nn
 import torch
+import matplotlib.pyplot as plt
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(torch.cuda.get_device_name())
@@ -98,3 +99,8 @@ relu激活函数
 """
 def relu(x):
     return torch.max(input=x, other=torch.tensor(0.0))
+
+
+"""
+高维线性回归板块------------------------------------------------------------
+"""
