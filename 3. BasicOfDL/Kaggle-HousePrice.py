@@ -91,4 +91,30 @@ def train(net, train_features, train_labels, test_features, test_labels,
 """
 k折交叉验证集:它将被用来选择模型设计并调节超参数。DIDLutils中实现了一个函数，它返回第i折交叉验证时所需要的训练和验证数据。
 """
-DIDLutils.k_fold(net, train, 5, train_feature, train_labels, num_epochs=100, learning_rate=5, weight_decay=0, batch_size=50)
+turns = 50
+num_epochs = 500
+learning_rate = 5
+weight_decay = 0
+batch_size = 64
+# DIDLutils.k_fold(net, train, 5, train_feature, train_labels, num_epochs=num_epochs, learning_rate=learning_rate, weight_decay=weight_decay,
+#                   batch_size=batch_size)
+
+"""
+训练并且预测结果
+"""
+
+
+def train_and_pred(net, train_features, test_features, train_labels, test_data, num_epochs, lr, weight_decay,
+                   batch_size):
+    net = net
+    for t in range(turns):
+        train_loss, test_loss = train(net, train_features, train_labels, test_features, None, num_epochs, lr, weight_decay,
+                                  batch_size)
+        if t % 10 == 0:
+            print(train_loss[-1])
+    preds = net(test_features).detach().numpy()
+    test_data['SalePrice'] = pd.Series(preds.reshape(1, -1)[0])
+    submission = pd.concat([test_data['Id'], test_data['SalePrice']], axis=1)
+    submission.to_csv('datasetOfHousePrice/submission.csv', index=False)
+
+train_and_pred(net, train_feature, test_feature, train_labels, test_data, num_epochs, learning_rate, weight_decay, batch_size)
