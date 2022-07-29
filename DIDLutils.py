@@ -159,3 +159,25 @@ def k_fold(net, train, k, X_train, y_train, num_epochs,
         plt.show()
         print(f'fold {i}, train rmse {train_loss[-1]}, cross rmse {cross_loss[-1]}')
     return train_loss_sum / k, cross_loss_sum / k
+
+"""
+卷积神经网络板块------------------------------------------------------------
+"""
+# 卷积操作
+def corr2d(X, K):
+    h, w = K.shape
+    Y = torch.zeros((X.shape[0]-h+1, X.shape[1]-w+1))
+    for i in range(Y.shape[0]):
+        for j in range(Y.shape[1]):
+            Y[i, j] = (X[i:i+h, j:j+w] * K).sum()
+    return Y
+
+# 二维卷积层
+class Conv2D(nn.Module):
+    def __init__(self, kernel_size):
+        super(Conv2D, self).__init__()
+        self.weight = nn.Parameter(torch.randn(kernel_size))
+        self.bias = nn.Parameter(torch.randn(1))
+
+    def forward(self, X):
+        return corr2d(X, self.weight) + self.bias
