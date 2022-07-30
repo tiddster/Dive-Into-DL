@@ -181,3 +181,24 @@ class Conv2D(nn.Module):
 
     def forward(self, X):
         return corr2d(X, self.weight) + self.bias
+
+# 多通道输入
+def corr2d_multi_in(X, K):
+    res = corr2d(X[0, :, :], K[0, :, :])
+    for i in range(1, X.shape[0]):
+        res +=  corr2d(X[i, :, :], K[i, :, :])
+    return res
+
+# 多通道输出
+def corr2d_multi_in_out(X, K):
+    return torch.stack([corr2d_multi_in(X, k) for k in K])
+
+
+# 1*1多通道输出
+def corr2d_multi_in_out_1_1(X, K):
+    c_in, h, w = X.shape
+    c_out = K.shape[0]
+    X = X.view(c_in, h*w)
+    K = K.view(c_out, c_in)
+    Y = torch.mm(K, X)
+    return Y.view(c_out, h, w)
