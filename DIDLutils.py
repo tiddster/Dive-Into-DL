@@ -202,3 +202,18 @@ def corr2d_multi_in_out_1_1(X, K):
     K = K.view(c_out, c_in)
     Y = torch.mm(K, X)
     return Y.view(c_out, h, w)
+
+# 池化操作
+PoolMax = 'max'
+PoolAvg = 'avg'
+def pool2d(X, pool_size, mode=PoolMax):
+    X = X.float()
+    pool_h, pool_w = pool_size
+    Y = torch.zeros(X.shape[0] - pool_h+1, X.shape[1] - pool_w+1)
+    for i in range(Y.shape[0]):
+        for j in range(Y.shape[1]):
+            if mode == PoolMax:
+                Y[i, j] = X[i:i+pool_h, j:j+pool_w].max()
+            elif mode == PoolAvg:
+                Y[i, j] = X[i:i+pool_h, j:j+pool_w].mean()
+
