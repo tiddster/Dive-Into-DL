@@ -43,4 +43,4 @@ train_iter, test_iter = LoadFashionMNIST.get_iter(batch_size)
 
 lr, num_epochs = 0.001, 5
 optimizer = torch.optim.Adam(net.parameters(), lr=lr)
-DIDLutils.train_LeNet(net, train_iter, test_iter, batch_size, optimizer, device, num_epochs)
+DIDLutils.train_CNNet(net, train_iter, test_iter, batch_size, optimizer, device, num_epochs)
