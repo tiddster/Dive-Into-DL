@@ -3,6 +3,7 @@ import time
 from torch import nn
 import torch
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(torch.cuda.get_device_name())
@@ -263,3 +264,14 @@ def train_CNNet(net, train_iter, test_iter, batch_size, optimizer, device, num_e
         test_acc = evaluate_accuracy(test_iter, net)
         print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f, time %.1f sec'
               % (epoch + 1, train_l_sum / batch_count, train_acc_sum / n, test_acc, time.time() - start))
+
+"""
+全局池化层
+"""
+class GlobalAvgPool2d(nn.Module):
+    def __init__(self):
+        super(GlobalAvgPool2d, self).__init__()
+
+    def forward(self, x):
+        return F.avg_pool2d(x, kernel_size=x.size()[2:])
+
