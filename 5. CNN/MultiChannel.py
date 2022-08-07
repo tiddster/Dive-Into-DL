@@ -17,6 +17,7 @@ X = torch.tensor([
         [7, 8, 9]
     ]
 ])
+print(X.shape)
 K = torch.tensor([
     [
         [0, 1],
