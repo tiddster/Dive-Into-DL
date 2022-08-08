@@ -2,6 +2,9 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+import DIDLutils
+import LoadFashionMNIST
+
 """
 稠密链接网络
 """
@@ -50,3 +53,42 @@ def transition_block(in_channels, out_channels):
         nn.AvgPool2d(kernel_size=2, stride=2)
     )
     return blk
+
+"""
+构建DenseNet模型
+"""
+net = nn.Sequential(
+    nn.Conv2d(1, 64, kernel_size=7, stride=2,padding=3),
+    nn.BatchNorm2d(64),
+    nn.ReLU(),
+    nn.MaxPool2d(kernel_size=3,stride=2, padding=1)
+)
+
+num_channels, growth_rate = 64,32
+num_convs_in_dense_blocks = [4,4,4,4]
+for i, num_convs in enumerate(num_convs_in_dense_blocks):
+    denseBlock = DenseBlock(num_convs, num_channels, growth_rate)
+    net.add_module(f"DenseBlock{i}", denseBlock)
+    num_channels = denseBlock.out_channels
+    if i != len(num_convs_in_dense_blocks) - 1:
+        net.add_module(f"transition_block{i}", transition_block(num_channels, num_channels//2))
+        num_channels = num_channels // 2
+
+net.add_module("BN", nn.BatchNorm2d(num_channels))
+net.add_module("relu", nn.ReLU())
+net.add_module("global_avg_pool", DIDLutils.GlobalAvgPool2d()) # GlobalAvgPool2d的输出: (Batch, num_channels, 1, 1)
+net.add_module("fc", nn.Sequential(DIDLutils.FlattenLayer(), nn.Linear(num_channels, 10)))
+
+X = torch.rand((1, 1, 96, 96))
+for name, layer in net.named_children():
+    print(name, ' input shape:\t', X.shape)
+    X = layer(X)
+    print(name, ' output shape:\t', X.shape)
+
+batch_size = 256
+train_iter, test_iter = LoadFashionMNIST.load_data_fashion_mnist(batch_size, resize=64)
+lr, num_epochs = 0.001, 5
+optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+
+if __name__ == '__main__':
+    DIDLutils.train_CNNet(net, train_iter, test_iter, batch_size, optimizer, DIDLutils.device, num_epochs)
