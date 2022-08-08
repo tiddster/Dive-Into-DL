@@ -30,7 +30,7 @@ def show_fashion_mnist(n=10):
     for i in range(n):
         X.append(mnist_train[i][0])
         y.append(labels[mnist_train[i][1]])
-    show_fashion_mnist(X, y)
+    plot_fashion_mnist(X, y)
 
 
 def plot_fashion_mnist(images, labels):
