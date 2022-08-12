@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 
+import DIDLutils
 import LoadLyrics
 
 (lyrics_indices, char_to_idx, idx_to_char, vocab_size) = LoadLyrics.load_data_jay_lyrics()
@@ -108,3 +109,41 @@ def predict_rnn(prefix, num_chars, rnn, params, init_rnn_state,
 
 print(predict_rnn('我是', 10, rnn, params, init_rnn_state, num_hiddens, vocab_size,
             device, idx_to_char, char_to_idx))
+
+"""
+裁剪梯度
+"""
+
+def grad_clipping(params, theta, device):
+    norm = torch.tensor([0, 0], device=device)
+    for param in params:
+        norm += (param.grad.data ** 2).sum()
+    norm = norm.sqrt().item()
+    if norm > theta:
+        for param in params:
+            param.grad.data *= (theta/norm)
+
+
+"""
+困惑度，来评价语言模型的好坏
+困惑度是对交叉熵损失函数做指数运算后得到的值
+最佳情况下，模型总是把标签类别的概率预测为1，此时困惑度为1；
+最坏情况下，模型总是把标签类别的概率预测为0，此时困惑度为正无穷；
+基线情况下，模型总是预测所有类别的概率都相同，此时困惑度为类别个数。
+显然，任何一个有效模型的困惑度必须小于类别个数。
+"""
+
+"""
+定义模型训练函数：
+1. 用困惑度评价模型
+2. 在迭代模型参数前裁剪梯度
+3. 对时序的数据采用不同采样发给发将导师隐藏初始状态初始化不同
+"""
+
+num_epochs, num_steps, batch_size, lr, clipping_theta = 250, 35, 32, 1e2, 1e-2
+pred_period, pred_len, prefixes = 50, 50, ['分开', '不分开']
+DIDLutils.train_and_predict_rnn(rnn, get_params, init_rnn_state, num_hiddens,
+                      vocab_size, device, lyrics_indices, idx_to_char,
+                      char_to_idx, True, num_epochs, num_steps, lr,
+                      clipping_theta, batch_size, pred_period, pred_len,
+                      prefixes)
