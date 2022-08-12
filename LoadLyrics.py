@@ -5,7 +5,6 @@ path = "F:\MINSTDataset\Lyrics\jaychou_lyrics.txt"
 
 with open(path, encoding='utf-8') as f:
     s = f.read()
-    print(s[:40])
 
 """
 创造两个列表：
@@ -43,9 +42,9 @@ def data_iter_random(lyrics_indices, batch_size, num_steps, device=None):
         Y = [_data(j * num_steps + 1) for j in batch_indices]
         yield torch.tensor(X, dtype=torch.float32, device=device), torch.tensor(Y, dtype=torch.float32, device=device)
 
-my_seq = list(range(30))
-for X, Y in data_iter_random(my_seq, batch_size=2, num_steps=6):
-    print('X: ', X, '\nY:', Y, '\n')
+# my_seq = list(range(30))
+# for X, Y in data_iter_random(my_seq, batch_size=2, num_steps=6):
+#     print('X: ', X, '\nY:', Y, '\n')
 
 def data_iter_consecutive(lyrics_indices, batch_size, num_steps, device=None):
     if device is None:
@@ -61,5 +60,9 @@ def data_iter_consecutive(lyrics_indices, batch_size, num_steps, device=None):
         Y = indices[:, i + 1: i + num_steps + 1]
         yield X, Y
 
-for X, Y in data_iter_consecutive(my_seq, batch_size=2, num_steps=6):
-    print('X: ', X, '\nY:', Y, '\n')
+# for X, Y in data_iter_consecutive(my_seq, batch_size=2, num_steps=6):
+#     print('X: ', X, '\nY:', Y, '\n')
+
+
+def load_data_jay_lyrics():
+    return indices, char_to_idx, idx_to_char, vocab_size
