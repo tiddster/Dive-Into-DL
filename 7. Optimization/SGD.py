@@ -1,7 +1,12 @@
 import time
 
+import numpy as np
 import torch.utils.data
-from torch import nn
+from matplotlib import pyplot as plt
+from torch import nn, optim
+
+import  LoadAirfoilNoiseDataset
+
 
 def sgd(params, states, hyperparams):
     for p in params:
@@ -20,3 +25,17 @@ def train_by_sgd(optimizer_fn, optimizer_hyperparams, features, labels,
 
     for _ in range(num_epochs):
         start = time.time()
+        for batch_i, (X, y) in enumerate(data_iter):
+            l = loss(net(X).view(-1), y)/2
+
+            optimizer.zero_grad()
+            l.backward()
+            optimizer.step()
+            if (batch_i + 1) * batch_size % 100 == 0:
+                ls.append(eval_loss())
+        print('loss: %f, %f sec per epoch' % (ls[-1], time.time() - start))
+        plt.plot(np.linspace(0, num_epochs, len(ls)), ls)
+    plt.show()
+
+features, labels = LoadAirfoilNoiseDataset.feature, LoadAirfoilNoiseDataset.labels
+train_by_sgd(optim.SGD, {"lr": 0.05}, features, labels, num_epochs=10)
