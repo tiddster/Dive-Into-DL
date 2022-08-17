@@ -1,7 +1,7 @@
 import random
 import torch
 
-path = "F:\MINSTDataset\Lyrics\jaychou_lyrics.txt"
+path = "F:\Dataset\Lyrics\jaychou_lyrics.txt"
 
 with open(path, encoding='utf-8') as f:
     s = f.read()

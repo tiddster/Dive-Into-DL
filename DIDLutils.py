@@ -536,3 +536,13 @@ def train_pytorch(optimizer_fn, optimizer_hyperparams, features, labels,
         print('loss: %f, %f sec per epoch' % (ls[-1], time.time() - start))
     plt.plot(np.linspace(0, num_epochs, len(ls)), ls)
     plt.show()
+
+def show_image(imgs, num_rows, num_cols, scale=2):
+    figsize = (num_cols * scale, num_rows * scale)
+    _, axes = plt.subplots(num_rows, num_cols, figsize=figsize)
+    for i in range(num_rows):
+        for j in range(num_cols):
+            axes[i][j].imshow(imgs[i * num_cols + j])
+            axes[i][j].axes.get_xaxis().set_visible(False)
+            axes[i][j].axes.get_yaxis().set_visible(False)
+    return axes
