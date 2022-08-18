@@ -1,6 +1,7 @@
 import time
 
 import torch
+from torchvision import models
 
 import DIDLutils
 import torchvision
@@ -69,7 +70,7 @@ def train(train_iter, test_iter, net, loss, optimizer, device, num_epochs):
 
 
 def train_with_data_aug(train_augs, test_augs, device, lr=0.001):
-    batch_size, net = 256, d2l.Residual(32*32, 48*48)
+    batch_size, net = 256, models.resnet18()
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
     loss = torch.nn.CrossEntropyLoss()
     train_iter = LoadCIFAR.load_cifar10(True, train_augs, batch_size)
