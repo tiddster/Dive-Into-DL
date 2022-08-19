@@ -1,6 +1,7 @@
 import math
 import time
 
+import cv2
 import numpy as np
 from torch import nn
 import torch
@@ -550,3 +551,7 @@ def show_image(imgs, num_rows, num_cols, scale=2):
             axes[i][j].axes.get_xaxis().set_visible(False)
             axes[i][j].axes.get_yaxis().set_visible(False)
     plt.show()
+
+
+def bbox_to_rect(img, bbox_pt1, bbox_pt2, color):
+    cv2.rectangle(img, bbox_pt1, bbox_pt2, color)
