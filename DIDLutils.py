@@ -81,9 +81,12 @@ def evaluate_accuracy(data_iter, net):
 
 
 def train(net, train_iter, test_iter, loss, num_epoch, batch_size, params=None, lr=None, optimizer=None):
+    net = net.to(device)
     for epoch in range(num_epoch):
-        train_l_sum, train_acc_sum, n = 0.0, 0.0, 0
+        train_l_sum, train_acc_sum, n, start = 0.0, 0.0, 0, time.time()
         for X, y in train_iter:
+            X = X.to(device)
+            y = y.to(device)
             y_hat = net(X)
             l = loss(y_hat, y).sum()
 
@@ -104,8 +107,9 @@ def train(net, train_iter, test_iter, loss, num_epoch, batch_size, params=None, 
             train_acc_sum += (y_hat.argmax(dim=1) == y).sum().item()
             n += y.shape[0]
         test_acc = evaluate_accuracy(test_iter, net)
-        print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f'
-              % (epoch + 1, train_l_sum / n, train_acc_sum / n, test_acc))
+        end = time.time()
+        print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f,  time %.3f'
+              % (epoch + 1, train_l_sum / n, train_acc_sum / n, test_acc, end - start))
 
 
 """
