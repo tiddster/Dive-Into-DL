@@ -3,6 +3,7 @@ import time
 
 import cv2
 import numpy as np
+from d2l.torch import d2l
 from torch import nn
 import torch
 import matplotlib.pyplot as plt
@@ -556,9 +557,11 @@ def show_image(imgs, num_rows, num_cols, scale=2):
 def bbox_to_rect(img, bbox_pt1, bbox_pt2, color):
     cv2.rectangle(img, bbox_pt1, bbox_pt2, color)
 
-
+"""
+锚框板块
+"""
 def MultiBoxPrior(feature_map, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5]):
-    pairs = []
+    pairs = []  # pair of (size, sqrt(ration))
     for r in ratios:
         pairs.append([sizes[0], math.sqrt(r)])
     for s in sizes[1:]:
@@ -566,10 +569,10 @@ def MultiBoxPrior(feature_map, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5]):
 
     pairs = np.array(pairs)
 
-    ss1 = pairs[:, 0] * pairs[:, 1]
-    ss2 = pairs[:, 0] / pairs[:, 1]
+    ss1 = pairs[:, 0] * pairs[:, 1]  # size * sqrt(ration)
+    ss2 = pairs[:, 0] / pairs[:, 1]  # size / sqrt(ration)
 
-    base_anchors = np.stack([-ss1, -ss2, ss1, ss2], axis=1)
+    base_anchors = np.stack([-ss1, -ss2, ss1, ss2], axis=1) / 2
 
     h, w = feature_map.shape[-2:]
     shifts_x = np.arange(0, w) / w
@@ -579,5 +582,28 @@ def MultiBoxPrior(feature_map, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5]):
     shift_y = shift_y.reshape(-1)
     shifts = np.stack((shift_x, shift_y, shift_x, shift_y), axis=1)
 
-    anchors = shifts.reshape((1, -1, 4) + base_anchors.reshape((1, -1, 4)))
+    anchors = shifts.reshape((-1, 1, 4)) + base_anchors.reshape((1, -1, 4))
+
     return torch.tensor(anchors, dtype=torch.float32).view(1, -1, 4)
+
+def show_bboxes(axes, bboxes, labels=None, colors=None):
+    def _make_list(obj, default_values=None):
+        if obj is None:
+            obj = default_values
+        elif not isinstance(obj, (list, tuple)):
+            obj = [obj]
+        return obj
+
+    labels = _make_list(labels)
+    colors = _make_list(colors, ['b', 'g', 'r', 'm', 'c'])
+    for i, bbox in enumerate(bboxes):
+        color = colors[i % len(colors)]
+        rect = d2l.bbox_to_rect(bbox.detach().cpu().numpy(), color)
+        axes.add_patch(rect)
+        if labels and len(labels) > i:
+            text_color = 'k' if color == 'w' else 'w'
+            axes.text(rect.xy[0], rect.xy[1], labels[i],
+                      va='center', ha='center', fontsize=6, color=text_color,
+                      bbox=dict(facecolor=color, lw=0))
+    plt.plot(axes)
+    plt.show()
