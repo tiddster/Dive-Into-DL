@@ -4,6 +4,7 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 import torch.nn as nn
 import time
+import ResNet
 
 # 先进行变换, 将数据进行组合变换，变换成tensor并且归一化
 from torch import optim
@@ -11,7 +12,7 @@ from torch import optim
 transform = transforms.Compose(
     [
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.4914, 0.4822, 0.4465),(0.2023, 0.1994, 0.2010))
     ]
 )
 
@@ -43,6 +44,7 @@ class Net(nn.Module):
         x = F.max_pool2d(F.relu(self.conv1(x)), 2)  # 3*32*32  -> 150*30*30  -> 15*15*15
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)  # 15*15*15 -> 75*12*12  -> 75*6*6
         x = F.max_pool2d(F.relu(self.conv3(x)), 2)  # 75*6*6   -> 375*4*4   -> 375*2*2
+        print(x.shape)
         x = x.view(x.size()[0], -1)  # 将375*2*2的tensor打平成1维，1500
         x = F.relu(self.fc1(x))  # 全连接层 1500 -> 400
         x = F.relu(self.fc2(x))  # 全连接层 400 -> 120
@@ -50,10 +52,9 @@ class Net(nn.Module):
         x = self.fc4(x)  # 全连接层 84  -> 10
         return x
 
+lr, num_epochs = 0.0001, 10
 
-lr, num_epochs = 0.0001, 15
-
-net = Net()
+net = ResNet.ResNet()
 loss = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
 
