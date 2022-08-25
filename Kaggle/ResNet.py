@@ -12,6 +12,10 @@ class ResnetBasicBlock(nn.Module):
 
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
         self.bn2 = nn.BatchNorm2d(out_channels)
+        self.relu2 = nn.ReLU()
+
+        self.conv3 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(out_channels)
 
     def forward(self, X):
         X = self.conv1(X)
@@ -19,6 +23,9 @@ class ResnetBasicBlock(nn.Module):
         X = self.relu1(X)
         X = self.conv2(X)
         X = self.bn2(X)
+        X = self.relu2(X)
+        X = self.conv3(X)
+        X = self.bn3(X)
         return F.relu(X)
 
 

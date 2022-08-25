@@ -52,7 +52,7 @@ class Net(nn.Module):
         x = self.fc4(x)  # 全连接层 84  -> 10
         return x
 
-lr, num_epochs = 0.0001, 10
+lr, num_epochs = 0.001, 10
 
 net = ResNet.ResNet()
 loss = nn.CrossEntropyLoss()
@@ -63,7 +63,7 @@ def train(net):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net = net.to(device)
     for epoch in range(num_epochs):  # 训练8次
-        running_loss, n, correct = 0.0, 0, 0
+        running_loss, n, correct, start = 0.0, 0, 0, time.time()
         for i, (X,y) in enumerate(train_iter):
             # enumerate() 函数：用于将一个可遍历的数据对象(如列表、元组或字符串)组合为一个索引序列，同时列出数据和数据下标，一般用在 for 循环当中
             # enumerate(sequence, [start=0])
@@ -94,8 +94,9 @@ def train(net):
                 print("[%d,%5d] loss: %.3f" \
                       % (epoch + 1, i + 1, running_loss / 2000))
                 running_loss = 0.0
+        end = time.time()
         test_acc = evacuate_accuracy(test_iter, net)
-        print(f"test_acc:{test_acc}, train_acc:{correct/n}")
+        print(f"test_acc:{test_acc}, train_acc:{correct/n}, time: %.2f" % (end-start))
     print("Finished Training")
 
 
