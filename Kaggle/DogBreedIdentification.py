@@ -1,4 +1,5 @@
 import os
+import time
 
 import PIL
 import cv2
@@ -7,6 +8,8 @@ import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import dataloader
 from torchvision.transforms import transforms
+
+from Kaggle import ResNet34
 
 """
 读取信息, 数据处理
@@ -82,3 +85,40 @@ img_test_path = [os.path.join(TEST_PATH + name) for name in os.listdir(TEST_PATH
 test_data = LoadDataset(img_test_path)
 test_iter = dataloader.DataLoader(test_data, batch_size=128, shuffle=False)
 
+"""
+构建resnet34模型
+"""
+net = ResNet34.net
+loss_fn = ResNet34.loss_fn
+optimizer = ResNet34.optimizer
+
+num_epochs = 8
+
+
+from torch.autograd import Variable
+def train(net):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    net = net.to(device)
+    for epoch in range(num_epochs):
+        train_loss_sum, train_correct_sum, total_num, correct_num, start = 0.0, 0.0, 0, 0, time.time()
+        for X, labels in train_iter:
+            X, labels = X.to(device), labels.to(device)
+            X, labels = Variable(X), Variable(labels)
+
+            optimizer.zero_grad()
+
+            outputs = net(X)
+            loss = loss_fn(outputs, labels)
+            loss.backward()
+
+            optimizer.step()
+
+            train_loss_sum += loss.item()
+            correct_num = (outputs.argmax(dim=1) == labels).sum().item()
+            total_num = labels.shape[0]
+
+        end = time.time()
+        print(f"train_loss_sum: {train_loss_sum},  train_accuracy: {correct_num/total_num}, time:{end - start}")
+
+if __name__ == "__main__":
+    train(net)
