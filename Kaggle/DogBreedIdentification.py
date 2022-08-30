@@ -9,7 +9,10 @@ from torch.utils.data.dataset import Dataset
 from torch.utils.data import dataloader
 from torchvision.transforms import transforms
 
-from Kaggle import ResNet34
+import torch.nn as nn
+import torch.optim as optim
+
+from Kaggle import ResNet18
 
 """
 读取信息, 数据处理
@@ -88,16 +91,16 @@ test_iter = dataloader.DataLoader(test_data, batch_size=128, shuffle=False)
 """
 构建resnet34模型
 """
-net = ResNet34.net
-loss_fn = ResNet34.loss_fn
-optimizer = ResNet34.optimizer
+net = ResNet18.ResNet()
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
 num_epochs = 8
 
 
 from torch.autograd import Variable
 def train(net):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
     net = net.to(device)
     for epoch in range(num_epochs):
         train_loss_sum, train_correct_sum, total_num, correct_num, start = 0.0, 0.0, 0, 0, time.time()

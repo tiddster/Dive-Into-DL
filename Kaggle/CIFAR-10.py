@@ -4,7 +4,7 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 import torch.nn as nn
 import time
-import ResNet
+import ResNet18
 
 # 先进行变换, 将数据进行组合变换，变换成tensor并且归一化
 from torch import optim
@@ -54,7 +54,7 @@ class Net(nn.Module):
 
 lr, num_epochs = 0.001, 10
 
-net = ResNet.ResNet()
+net = ResNet18.ResNet()
 loss = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
 
