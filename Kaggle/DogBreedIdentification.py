@@ -12,7 +12,7 @@ from torchvision.transforms import transforms
 import torch.nn as nn
 import torch.optim as optim
 
-from Kaggle import ResNet18
+from Kaggle import ResNet18, ResNet
 
 """
 读取信息, 数据处理
@@ -91,10 +91,9 @@ test_iter = dataloader.DataLoader(test_data, batch_size=128, shuffle=False)
 """
 构建resnet34模型
 """
-net = ResNet18.ResNet()
+net = ResNet.ResNet18()
 loss_fn = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
 num_epochs = 8
 
 
@@ -104,7 +103,7 @@ def train(net):
     net = net.to(device)
     for epoch in range(num_epochs):
         train_loss_sum, train_correct_sum, total_num, correct_num, start = 0.0, 0.0, 0, 0, time.time()
-        for X, labels in train_iter:
+        for i, (X, labels) in enumerate(train_iter):
             X, labels = X.to(device), labels.to(device)
             X, labels = Variable(X), Variable(labels)
 
@@ -116,12 +115,31 @@ def train(net):
 
             optimizer.step()
 
-            train_loss_sum += loss.item()
-            correct_num = (outputs.argmax(dim=1) == labels).sum().item()
-            total_num = labels.shape[0]
+            print(f"[ epoch:{epoch}, batch:{i} ] : loss {loss.item()}")
 
+            train_loss_sum += loss.item()
+            correct_num += (outputs.argmax(dim=1) == labels).sum().item()
+            total_num += labels.shape[0]
+
+        cross_accuracy = evacuate_accuracy(cross_iter, net, device)
         end = time.time()
-        print(f"train_loss_sum: {train_loss_sum},  train_accuracy: {correct_num/total_num}, time:{end - start}")
+        print(f"train_loss_sum: {train_loss_sum},  train_accuracy: {correct_num/total_num}, cross_accuracy:{cross_accuracy}, time:{end - start}")
+
+
+def evacuate_accuracy(data_iter, net, device):
+    net = net.to(device)
+    total_sum, correct_sum = 0, 0
+    for X, label in data_iter:
+        X, label = X.to(device), label.to(device)
+        X, label = Variable(X), Variable(label)
+
+        output = net(X)
+        correct_sum += (output.argmax(dim=1) == label).sum().item()
+        total_sum += label.shape[0]
+
+    return correct_sum / total_sum
+
 
 if __name__ == "__main__":
     train(net)
+
