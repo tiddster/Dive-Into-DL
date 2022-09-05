@@ -11,6 +11,8 @@ import torch.nn.functional as F
 model_dim = 512
 feed_forward_dim = 1024
 dk, dv = 64, 64
+vocab_size = 5
+tgt_vocab_size = 6
 
 class ScaleDotProductAttention(nn.Module):
     def __init__(self):
@@ -199,9 +201,9 @@ class DecoderLayer(nn.Module):
         return output
 
 class Decoder(nn.Module):
-    def __init__(self, target_emb, model_dim = 512):
+    def __init__(self, target_vocab_size, model_dim = 512):
         super(Decoder, self).__init__()
-        self.target_emb = nn.Embedding(target_emb, model_dim)
+        self.target_emb = nn.Embedding(target_vocab_size, model_dim)
         self.pos_emb = PositionEncoding(model_dim)
         self.layers = nn.ModuleList([DecoderLayer() for _ in range(6)])
 
@@ -214,3 +216,21 @@ class Decoder(nn.Module):
         for layer in self.layers:
             decoder_outputs = layer(decoder_outputs, encoder_outputs, self_pad_mask, encoder_mask)
         return decoder_outputs
+
+"""
+组合起来形成transformer
+"""
+
+class Transformer(nn.Module):
+    def __init__(self):
+        super(Transformer, self).__init__()
+        self.encoder = Encoder(vocab_size)
+        self.decoder = Decoder(tgt_vocab_size)
+        self.projection = nn.Linear(model_dim, tgt_vocab_size, bias=False)
+
+    def forward(self, encoder_inputs, decoder_inputs):
+        encoder_outputs = self.encoder(encoder_inputs)
+        decoder_outputs = self.decoder(decoder_inputs)
+
+        final_output = self.projection(decoder_outputs)
+        return final_output.view(-1, final_output.shape[-1])
