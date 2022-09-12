@@ -1,18 +1,14 @@
 import math
 import time
 
-import cv2
+# import cv2
 import numpy as np
-from d2l.torch import d2l
 from torch import nn
 import torch
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 
-import LoadLyrics
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(torch.cuda.get_device_name())
 
 """"
 输入层的形状转换
@@ -369,59 +365,59 @@ def grad_clipping(params, theta, device):
             param.grad.data *= (theta / norm)
 
 
-def train_and_predict_rnn(rnn, get_params, init_rnn_state, num_hiddens,
-                          vocab_size, device, corpus_indices, idx_to_char,
-                          char_to_idx, is_random_iter, num_epochs, num_steps,
-                          lr, clipping_theta, batch_size, pred_period,
-                          pred_len, prefixes):
-    if is_random_iter:
-        data_iter_fn = LoadLyrics.data_iter_random
-    else:
-        data_iter_fn = LoadLyrics.data_iter_consecutive
-    params = get_params()
-    loss = nn.CrossEntropyLoss()
-
-    for epoch in range(num_epochs):
-        if not is_random_iter:  # 如使用相邻采样，在epoch开始时初始化隐藏状态
-            state = init_rnn_state(batch_size, num_hiddens, device)
-        l_sum, n, start = 0.0, 0, time.time()
-        data_iter = data_iter_fn(corpus_indices, batch_size, num_steps, device)
-        for X, Y in data_iter:
-            if is_random_iter:  # 如使用随机采样，在每个小批量更新前初始化隐藏状态
-                state = init_rnn_state(batch_size, num_hiddens, device)
-            else:
-                # 否则需要使用detach函数从计算图分离隐藏状态, 这是为了
-                # 使模型参数的梯度计算只依赖一次迭代读取的小批量序列(防止梯度计算开销太大)
-                for s in state:
-                    s.detach_()
-
-            inputs = to_onehot(X, vocab_size)
-            # outputs有num_steps个形状为(batch_size, vocab_size)的矩阵
-            (outputs, state) = rnn(inputs, state, params)
-            # 拼接之后形状为(num_steps * batch_size, vocab_size)
-            outputs = torch.cat(outputs, dim=0)
-            # Y的形状是(batch_size, num_steps)，转置后再变成长度为
-            # batch * num_steps 的向量，这样跟输出的行一一对应
-            y = torch.transpose(Y, 0, 1).contiguous().view(-1)
-            # 使用交叉熵损失计算平均分类误差
-            l = loss(outputs, y.long())
-
-            # 梯度清0
-            if params[0].grad is not None:
-                for param in params:
-                    param.grad.data.zero_()
-            l.backward()
-            grad_clipping(params, clipping_theta, device)  # 裁剪梯度
-            # d2l.sgd(params, lr, 1)  # 因为误差已经取过均值，梯度不用再做平均
-            l_sum += l.item() * y.shape[0]
-            n += y.shape[0]
-
-        if (epoch + 1) % pred_period == 0:
-            print('epoch %d, perplexity %f, time %.2f sec' % (
-                epoch + 1, math.exp(l_sum / n), time.time() - start))
-            for prefix in prefixes:
-                print(' -', predict_rnn(prefix, pred_len, rnn, params, init_rnn_state,
-                                        num_hiddens, vocab_size, device, idx_to_char, char_to_idx))
+# def train_and_predict_rnn(rnn, get_params, init_rnn_state, num_hiddens,
+#                           vocab_size, device, corpus_indices, idx_to_char,
+#                           char_to_idx, is_random_iter, num_epochs, num_steps,
+#                           lr, clipping_theta, batch_size, pred_period,
+#                           pred_len, prefixes):
+#     if is_random_iter:
+#         data_iter_fn = LoadLyrics.data_iter_random
+#     else:
+#         data_iter_fn = LoadLyrics.data_iter_consecutive
+#     params = get_params()
+#     loss = nn.CrossEntropyLoss()
+#
+#     for epoch in range(num_epochs):
+#         if not is_random_iter:  # 如使用相邻采样，在epoch开始时初始化隐藏状态
+#             state = init_rnn_state(batch_size, num_hiddens, device)
+#         l_sum, n, start = 0.0, 0, time.time()
+#         data_iter = data_iter_fn(corpus_indices, batch_size, num_steps, device)
+#         for X, Y in data_iter:
+#             if is_random_iter:  # 如使用随机采样，在每个小批量更新前初始化隐藏状态
+#                 state = init_rnn_state(batch_size, num_hiddens, device)
+#             else:
+#                 # 否则需要使用detach函数从计算图分离隐藏状态, 这是为了
+#                 # 使模型参数的梯度计算只依赖一次迭代读取的小批量序列(防止梯度计算开销太大)
+#                 for s in state:
+#                     s.detach_()
+#
+#             inputs = to_onehot(X, vocab_size)
+#             # outputs有num_steps个形状为(batch_size, vocab_size)的矩阵
+#             (outputs, state) = rnn(inputs, state, params)
+#             # 拼接之后形状为(num_steps * batch_size, vocab_size)
+#             outputs = torch.cat(outputs, dim=0)
+#             # Y的形状是(batch_size, num_steps)，转置后再变成长度为
+#             # batch * num_steps 的向量，这样跟输出的行一一对应
+#             y = torch.transpose(Y, 0, 1).contiguous().view(-1)
+#             # 使用交叉熵损失计算平均分类误差
+#             l = loss(outputs, y.long())
+#
+#             # 梯度清0
+#             if params[0].grad is not None:
+#                 for param in params:
+#                     param.grad.data.zero_()
+#             l.backward()
+#             grad_clipping(params, clipping_theta, device)  # 裁剪梯度
+#             # d2l.sgd(params, lr, 1)  # 因为误差已经取过均值，梯度不用再做平均
+#             l_sum += l.item() * y.shape[0]
+#             n += y.shape[0]
+#
+#         if (epoch + 1) % pred_period == 0:
+#             print('epoch %d, perplexity %f, time %.2f sec' % (
+#                 epoch + 1, math.exp(l_sum / n), time.time() - start))
+#             for prefix in prefixes:
+#                 print(' -', predict_rnn(prefix, pred_len, rnn, params, init_rnn_state,
+#                                         num_hiddens, vocab_size, device, idx_to_char, char_to_idx))
 
 
 class RNNModel(nn.Module):
@@ -460,52 +456,52 @@ def predict_rnn_pytorch(prefix, num_chars, model, vocab_size, device, idx_to_cha
     return ''.join([idx_to_char[i] for i in output])
 
 
-def train_and_predict_rnn_pytorch(model, num_hiddens, vocab_size, device,
-                                  corpus_indices, idx_to_char, char_to_idx,
-                                  num_epochs, num_steps, lr, clipping_theta,
-                                  batch_size, pred_period, pred_len, prefixes):
-    loss = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    model.to(device)
-    state = None
-    for epoch in range(num_epochs):
-        l_sum, n, start = 0.0, 0, time.time()
-        data_iter = LoadLyrics.data_iter_consecutive(corpus_indices, batch_size, num_steps, device)  # 相邻采样
-        for X, Y in data_iter:
-            if state is not None:
-                # 使用detach函数从计算图分离隐藏状态, 这是为了
-                # 使模型参数的梯度计算只依赖一次迭代读取的小批量序列(防止梯度计算开销太大)
-                if isinstance(state, tuple):  # LSTM, state:(h, c)
-                    state = (state[0].detach(), state[1].detach())
-                else:
-                    state = state.detach()
-
-            (output, state) = model(X, state)  # output: 形状为(num_steps * batch_size, vocab_size)
-
-            # Y的形状是(batch_size, num_steps)，转置后再变成长度为
-            # batch * num_steps 的向量，这样跟输出的行一一对应
-            y = torch.transpose(Y, 0, 1).contiguous().view(-1)
-            l = loss(output, y.long())
-
-            optimizer.zero_grad()
-            l.backward()
-            # 梯度裁剪
-            grad_clipping(model.parameters(), clipping_theta, device)
-            optimizer.step()
-            l_sum += l.item() * y.shape[0]
-            n += y.shape[0]
-
-        try:
-            perplexity = math.exp(l_sum / n)
-        except OverflowError:
-            perplexity = float('inf')
-        if (epoch + 1) % pred_period == 0:
-            print('epoch %d, perplexity %f, time %.2f sec' % (
-                epoch + 1, perplexity, time.time() - start))
-            for prefix in prefixes:
-                print(' -', predict_rnn_pytorch(
-                    prefix, pred_len, model, vocab_size, device, idx_to_char,
-                    char_to_idx))
+# def train_and_predict_rnn_pytorch(model, num_hiddens, vocab_size, device,
+#                                   corpus_indices, idx_to_char, char_to_idx,
+#                                   num_epochs, num_steps, lr, clipping_theta,
+#                                   batch_size, pred_period, pred_len, prefixes):
+#     loss = nn.CrossEntropyLoss()
+#     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+#     model.to(device)
+#     state = None
+#     for epoch in range(num_epochs):
+#         l_sum, n, start = 0.0, 0, time.time()
+#         data_iter = LoadLyrics.data_iter_consecutive(corpus_indices, batch_size, num_steps, device)  # 相邻采样
+#         for X, Y in data_iter:
+#             if state is not None:
+#                 # 使用detach函数从计算图分离隐藏状态, 这是为了
+#                 # 使模型参数的梯度计算只依赖一次迭代读取的小批量序列(防止梯度计算开销太大)
+#                 if isinstance(state, tuple):  # LSTM, state:(h, c)
+#                     state = (state[0].detach(), state[1].detach())
+#                 else:
+#                     state = state.detach()
+#
+#             (output, state) = model(X, state)  # output: 形状为(num_steps * batch_size, vocab_size)
+#
+#             # Y的形状是(batch_size, num_steps)，转置后再变成长度为
+#             # batch * num_steps 的向量，这样跟输出的行一一对应
+#             y = torch.transpose(Y, 0, 1).contiguous().view(-1)
+#             l = loss(output, y.long())
+#
+#             optimizer.zero_grad()
+#             l.backward()
+#             # 梯度裁剪
+#             grad_clipping(model.parameters(), clipping_theta, device)
+#             optimizer.step()
+#             l_sum += l.item() * y.shape[0]
+#             n += y.shape[0]
+#
+#         try:
+#             perplexity = math.exp(l_sum / n)
+#         except OverflowError:
+#             perplexity = float('inf')
+#         if (epoch + 1) % pred_period == 0:
+#             print('epoch %d, perplexity %f, time %.2f sec' % (
+#                 epoch + 1, perplexity, time.time() - start))
+#             for prefix in prefixes:
+#                 print(' -', predict_rnn_pytorch(
+#                     prefix, pred_len, model, vocab_size, device, idx_to_char,
+#                     char_to_idx))
 
 
 """
@@ -554,8 +550,8 @@ def show_image(imgs, num_rows, num_cols, scale=2):
     plt.show()
 
 
-def bbox_to_rect(img, bbox_pt1, bbox_pt2, color):
-    cv2.rectangle(img, bbox_pt1, bbox_pt2, color)
+# def bbox_to_rect(img, bbox_pt1, bbox_pt2, color):
+#     cv2.rectangle(img, bbox_pt1, bbox_pt2, color)
 
 """
 锚框板块
@@ -586,24 +582,33 @@ def MultiBoxPrior(feature_map, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5]):
 
     return torch.tensor(anchors, dtype=torch.float32).view(1, -1, 4)
 
-def show_bboxes(axes, bboxes, labels=None, colors=None):
-    def _make_list(obj, default_values=None):
-        if obj is None:
-            obj = default_values
-        elif not isinstance(obj, (list, tuple)):
-            obj = [obj]
-        return obj
+# def show_bboxes(axes, bboxes, labels=None, colors=None):
+#     def _make_list(obj, default_values=None):
+#         if obj is None:
+#             obj = default_values
+#         elif not isinstance(obj, (list, tuple)):
+#             obj = [obj]
+#         return obj
+#
+#     labels = _make_list(labels)
+#     colors = _make_list(colors, ['b', 'g', 'r', 'm', 'c'])
+#     for i, bbox in enumerate(bboxes):
+#         color = colors[i % len(colors)]
+#         rect = d2l.bbox_to_rect(bbox.detach().cpu().numpy(), color)
+#         axes.add_patch(rect)
+#         if labels and len(labels) > i:
+#             text_color = 'k' if color == 'w' else 'w'
+#             axes.text(rect.xy[0], rect.xy[1], labels[i],
+#                       va='center', ha='center', fontsize=6, color=text_color,
+#                       bbox=dict(facecolor=color, lw=0))
+#     plt.plot(axes)
+#     plt.show()
 
-    labels = _make_list(labels)
-    colors = _make_list(colors, ['b', 'g', 'r', 'm', 'c'])
-    for i, bbox in enumerate(bboxes):
-        color = colors[i % len(colors)]
-        rect = d2l.bbox_to_rect(bbox.detach().cpu().numpy(), color)
-        axes.add_patch(rect)
-        if labels and len(labels) > i:
-            text_color = 'k' if color == 'w' else 'w'
-            axes.text(rect.xy[0], rect.xy[1], labels[i],
-                      va='center', ha='center', fontsize=6, color=text_color,
-                      bbox=dict(facecolor=color, lw=0))
-    plt.plot(axes)
-    plt.show()
+def batch_print(epoch, batch, loss):
+    print(f"[epoch: {epoch},  batch: {batch} ] ==== loss: {loss}")
+
+def epoch_print(epoch, loss_sum, train_accuracy, start, end, test_accuracy=None):
+    if test_accuracy:
+        print(f"[epoch:{epoch}] === train_loss_sum:{loss_sum} === train_accuracy: %.2f, test_accuracy: %.2f === time:{end-start}" % train_accuracy, test_accuracy)
+    else:
+        print(f"[epoch:{epoch}] === train_loss_sum:{loss_sum} === train_accuracy: % .2f === time:{end - start}" % train_accuracy)
