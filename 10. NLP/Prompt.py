@@ -76,9 +76,13 @@ test_inputid_list, test_labelid_list, test_segid_list, test_attid_list = get_emb
                                                                                               test_labels)
 
 print('1')
-train_inputid_list, train_labelid_list, train_segid_list, train_attid_list = torch.tensor(train_inputid_list, dtype=torch.long), torch.tensor(train_labelid_list, dtype=torch.long), torch.tensor(train_segid_list, dtype=torch.long), torch.tensor(train_attid_list, dtype=torch.long)
+train_inputid_list, train_labelid_list, train_segid_list, train_attid_list = \
+    torch.tensor(train_inputid_list, dtype=torch.long), torch.tensor(train_labelid_list, dtype=torch.long), \
+    torch.tensor(train_segid_list, dtype=torch.long), torch.tensor(train_attid_list, dtype=torch.long)
 print('2')
-test_inputid_list, test_labelid_list, test_segid_list, test_attid_list = torch.Tensor(test_inputid_list), torch.Tensor(test_labelid_list), torch.Tensor(test_segid_list), torch.Tensor(test_attid_list)
+test_inputid_list, test_labelid_list, test_segid_list, test_attid_list = \
+    torch.tensor(test_inputid_list, dtype=torch.long), torch.tensor(test_labelid_list, dtype=torch.long), \
+    torch.tensor(test_segid_list, dtype=torch.long), torch.tensor(test_attid_list, dtype=torch.long)
 
 
 """
@@ -135,7 +139,7 @@ net = Bert_Model(BERT_PATH, config)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 optimizer = AdamW(net.parameters(), lr=1e-5, weight_decay=1e-4)
 loss_fn = nn.CrossEntropyLoss(ignore_index=-1)
-EPOCH_NUM = 100
+EPOCH_NUM = 10
 schedule = get_cosine_schedule_with_warmup(optimizer,num_warmup_steps=len(train_iter),num_training_steps=EPOCH_NUM*len(train_iter))
 
 """
@@ -159,10 +163,24 @@ def train():
             train_loss_sum += loss.item()
             batch += 1
 
-            if batch % 2 == 0:
-                DIDLutils.batch_print(epoch, batch, loss.item())
+            train_correct_num += (output.view(-1, 30522).argmax(dim=1) == labels.view(-1)).sum().item()
+            train_total_num += labels.shape[0]
+
+            if batch % 20 == 0:
+                test_acc = test_accuracy(net)
+                DIDLutils.batch_print(epoch, batch, loss.item(), train_correct_num/train_total_num, test_acc)
+
+        test_acc = test_accuracy(net)
         end = time.time()
-        DIDLutils.epoch_print(epoch, train_loss_sum, train_correct_num/train_total_num, start, end)
+        DIDLutils.epoch_print(epoch, train_loss_sum, train_correct_num/train_total_num, start, end, test_acc)
+
+def test_accuracy(net):
+    correct, total = 0, 0
+    for idx, (tokens, atts, segs, labels) in enumerate(test_iter):
+        outputs = net(tokens, atts, segs)
+        correct += (outputs.view(-1, 30522).argmax(dim=1) == labels.view(-1)).sum().item()
+        total += labels.shape[0]
+    return correct/total
 
 if __name__ == "__main__":
     train()

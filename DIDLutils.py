@@ -604,11 +604,14 @@ def MultiBoxPrior(feature_map, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5]):
 #     plt.plot(axes)
 #     plt.show()
 
-def batch_print(epoch, batch, loss):
-    print(f"[epoch: {epoch},  batch: {batch} ] ==== loss: {loss}")
+def batch_print(epoch, batch, loss, train_accuracy, test_accuracy=None):
+    if test_accuracy:
+        print(f"[epoch: {epoch},  batch: {batch} ] ==== loss: {loss} ==== train_accuracy: %.4f, test_accuracy: %.4f" % (train_accuracy, test_accuracy))
+    else:
+        print(f"[epoch: {epoch},  batch: {batch} ] ==== loss: {loss} ==== accuracy: %.4f" % train_accuracy)
 
 def epoch_print(epoch, loss_sum, train_accuracy, start, end, test_accuracy=None):
     if test_accuracy:
-        print(f"[epoch:{epoch}] === train_loss_sum:{loss_sum} === train_accuracy: %.2f, test_accuracy: %.2f === time:{end-start}" % train_accuracy, test_accuracy)
+        print(f"[epoch:{epoch}] === train_loss_sum:{loss_sum} === train_accuracy: %.4f, test_accuracy: %.4f === time:{end-start}" % (train_accuracy, test_accuracy))
     else:
-        print(f"[epoch:{epoch}] === train_loss_sum:{loss_sum} === train_accuracy: % .2f === time:{end - start}" % train_accuracy)
+        print(f"[epoch:{epoch}] === train_loss_sum:{loss_sum} === train_accuracy: % .4f === time:{end - start}" % train_accuracy)
