@@ -171,7 +171,7 @@ def train():
             train_correct_num += (output.view(-1, 30522).argmax(dim=1) == labels.view(-1)).sum().item()
             train_total_num += labels.shape[0]
 
-            if batch % 10 == 0:
+            if batch % 100 == 0:
                 test_acc, test_loss = test_accuracy(net)
                 DIDLutils.batch_print(epoch, batch, loss.item(), train_correct_num/train_total_num, test_acc, test_loss)
 
