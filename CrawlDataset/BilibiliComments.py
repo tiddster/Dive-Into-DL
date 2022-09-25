@@ -2,7 +2,7 @@ import requests
 import time
 import jieba
 import pandas as pd
-import wordcloud
+import Cloud
 from aip import AipNlp
 from cnsenti import Sentiment
 
