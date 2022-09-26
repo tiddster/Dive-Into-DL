@@ -28,10 +28,10 @@ root_path = "F:\Dataset\\Bilibili\\"
 # print(textList)
 
 # 经济社会学
-path = "F:\Dataset\\Bilibili\\MentalBasic.csv"
+path = "F:\Dataset\\Bilibili\\EQBasic.csv"
 data = pd.read_csv(path)
 print(data)
-textList = list(data["1"])
+textList = list(data["内容"])
 print(textList)
 
 # 教资数据集
@@ -96,7 +96,7 @@ def classifyText(text):
 
 
 # textList = ""
-csvName = "Mental.csv"
+csvName = "EQ.csv"
 
 i = 0
 for text in textList:
