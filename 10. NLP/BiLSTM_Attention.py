@@ -112,7 +112,7 @@ def train():
 
 train()
 
-test_text_list = ['i hate baseball', 'i love that']
+test_text_list = ['i hate baseball', 'i love that', 'i love this', 'he likes me']
 tests = [[word2idx[word] for word in test_text.split()] for test_text in test_text_list]
 test_batch = torch.LongTensor(tests).to(device)
 
