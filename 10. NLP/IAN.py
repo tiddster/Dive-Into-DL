@@ -248,7 +248,7 @@ import torch.optim as optim
 
 
 def train():
-    for epoch in range(100):
+    for epoch in range(50):
         start_time = time.time()
         train_total_cases = 0
         train_correct_cases = 0
