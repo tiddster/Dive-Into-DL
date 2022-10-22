@@ -1,6 +1,6 @@
 import time
 from collections import Counter
-
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import spacy
 
@@ -136,7 +136,6 @@ def load_word_embeddings(embedding_dim, word2id):
     word2vec[word2id['<pad>'], :] = 0
     print('There are %s words in vocabulary and %s words out of vocabulary' % (len(word2id) - oov, oov))
     return word2vec
-
 
 from torch.utils.data import Dataset, DataLoader
 
