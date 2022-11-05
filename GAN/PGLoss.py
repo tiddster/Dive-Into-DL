@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from Config import config
 
 class PGLoss(nn.Module):
     """
@@ -11,23 +12,19 @@ class PGLoss(nn.Module):
     def __init__(self):
         super(PGLoss, self).__init__()
 
-    def forward(self, pred, target, reward):
+    def forward(self, pred, target, reward, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
         """
-            - pred: (batch_size, seq_len),
-            - target : (batch_size, ),
-            - reward : (batch_size, )
+            - pred: (batch_size, vocab_size),
+            - target : (batch_size, seq_len ),
+            - reward : (batch_size, seq_len)
         """
-        N = target.size(0)
-        C = pred.size(1)
-        one_hot = torch.zeros((N, C))
-        if pred.is_cuda:
-            one_hot = one_hot.cuda()
-        one_hot.scatter_(1, target.data.view((-1, 1)), 1)
-        one_hot = one_hot.type(torch.ByteTensor)
-        one_hot = Variable(one_hot)
-        if pred.is_cuda:
-            one_hot = one_hot.cuda()
-        loss = torch.masked_select(pred, one_hot)
-        loss = loss * reward
-        loss = -torch.sum(loss)
-        return loss
+        loss = 0
+        print(reward.shape)
+        print(target.shape)
+        for i in range(config.batch_size):
+            for j in range(config.generate_seq_len):
+                loss += -pred[i][target[i][j]] * reward[i][j]  # log(P(y_t|Y_1:Y_{t-1})) * Q
+
+        print(loss)
+
+        return loss / config.batch_size

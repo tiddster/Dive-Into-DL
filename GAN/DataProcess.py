@@ -1,8 +1,10 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
 
-path = "P:\Dataset\GAN\\ChinesePoem.txt"
+pos_path = "P:\Dataset\Bilibili\\ComputerOs.txt"
+neg_path = "Dataset\\output.txt"
 
+max_seqLen = 30
 
 def get_data(path):
     with open(path, 'r', encoding='utf8') as f:
@@ -14,7 +16,7 @@ def get_data(path):
 
 
 def get_vocab(textList):
-    id2word = []
+    id2word = ['']
     for text in textList:
         texts = list(set(text))
         id2word += texts
@@ -34,18 +36,29 @@ def get_token(textList, word2id):
     return tokenList
 
 
-id2word, word2id = get_vocab(get_data(path))
+id2word, word2id = get_vocab(get_data(pos_path))
 
-
-def get_iter(is_positive=True, path=path):
-    textList = get_data(path)
-    if is_positive:
-        tokenList = get_token(textList, word2id)
-        labels = torch.ones(len(tokenList))
+def get_iter(pos_path=pos_path, neg_path=None):
+    if neg_path:
+        neg_text_list = get_data(neg_path)
+        neg_labels = [0 for _ in range(len(neg_text_list))]
     else:
-        tokenList = get_token(textList, word2id)
-        labels = torch.zeros(len(tokenList))
-    print(tokenList)
+        neg_text_list = []
+        neg_labels = []
+
+    pos_text_list = get_data(pos_path)
+    pos_labels = [1 for _ in range(len(pos_text_list))]
+
+    textList = pos_text_list + neg_text_list
+    labels = pos_labels + neg_labels
+
+    tokenList = get_token(textList, word2id)
+    for i in range(len(tokenList)):
+        if len(tokenList[i]) > max_seqLen:
+            tokenList[i] = tokenList[i][:max_seqLen]
+        else:
+            tokenList[i] = tokenList[i] + [0] *( max_seqLen - len(tokenList[i]) )
+
     dataset = GANDataset(tokenList, labels)
     iter = DataLoader(dataset, batch_size=32, shuffle=True)
     return iter
@@ -53,8 +66,8 @@ def get_iter(is_positive=True, path=path):
 
 class GANDataset(Dataset):
     def __init__(self, x, y):
-        self.x = torch.tensor(x)
-        self.y = y
+        self.x = torch.tensor(x).long()
+        self.y = torch.tensor(y).long()
 
     def __getitem__(self, index):
         return self.x[index], self.y[index]

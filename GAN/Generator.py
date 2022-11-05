@@ -20,25 +20,39 @@ class GeneratorModule(nn.Module):
         y = self.pretrain_model(x)
         y_pred = self.pretrain_model.tag_space
         self.y_preb = self.softmax(y_pred)
-        self.y_output = self.y_preb.multinomial(num_samples=1)
-        return self.y_output
+        return self.y_preb
 
-    def generate(self, start_token=None):
-        if start_token:
-            y = start_token
-        else:
-            y = randint(0, config.vocab_size)
-        y_all_sample = [int(y)]
-        with torch.no_grad():
-            # self.pretrain_model.hidden = self.pretrain_model.init_hidden()
-            for i in range(config.generate_seq_len - 1):
-                x = torch.Tensor([y]).int().view([-1, 1])
-                y_pred = self.pretrain_model(x)
-                y_pred = F.softmax(self.pretrain_model.tag_space, dim=1)
-                y_pred = y_pred.squeeze(dim=0)
-                y = y_pred.multinomial(num_samples=1)  # 按概率生成下一个字
-                y_all_sample.append(int(y.tolist()[0]))
-        return y_all_sample
+    def generate(self, start_tokens=None, batch_size=config.batch_size, seq_len=config.generate_seq_len):
+        """
+        这个函数没有开头的首字提示，在词汇表中随机寻找一个成为首字，进行随机生成序列以测试
+        将y初始化为一个序列，和下面test函数保持一致
+        :param start_tokens: (<=batch_size,   n),  n为每一个batch所拥有序列长度, 小于batch_size的那部分由模型自动生成
+        :param batch_size:
+        :param seq_len:
+        :return:
+        """
+        samples = []
+        for i in range(batch_size):
+            if start_tokens is not None:
+                if i < len(start_tokens):
+                    y = start_tokens[i].tolist()
+                else:
+                    y = [randint(0, config.vocab_size)]
+            else:
+                y = [randint(0, config.vocab_size)]
+            y_all_sample = y
+
+            with torch.no_grad():
+                # self.pretrain_model.hidden = self.pretrain_model.init_hidden()
+                for i in range(seq_len - len(y)):
+                    x = torch.tensor(y[-1]).int().view([-1, 1])
+                    y_pred = self.pretrain_model(x)
+                    y_pred = F.softmax(self.pretrain_model.tag_space, dim=1)
+                    y_pred = y_pred.squeeze(dim=0)
+                    y = y_pred.multinomial(num_samples=1)  # 按概率生成下一个字
+                    y_all_sample.append(int(y.tolist()[0]))
+            samples.append(y_all_sample)
+        return torch.tensor(samples)
 
 
 class LSTMCore(nn.Module):
@@ -67,16 +81,9 @@ class LSTMCore(nn.Module):
         return self.tag_scores
 
 
-def generate_sentences(model):
+def generate_sentences(model, generate_seq_num=100):
     samples = []
-    str_samples = []
-    for _ in range(config.generate_seq_num):
+    for _ in range(generate_seq_num):
         sample = model.generate()
-        str_sample = [id2word[id] for id in sample]
         samples.append(sample)
-        str_samples.append(str_sample)
-    return samples, str_samples
-    # with open(output_file, 'w') as fout:
-    #     for sample in samples:
-    #         string = ' '.join([str(s) for s in sample])
-    #         fout.write('{}\n'.format(string))
+    return samples
