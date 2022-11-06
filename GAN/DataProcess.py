@@ -57,7 +57,12 @@ def get_iter(pos_path=pos_path, neg_path=None):
         if len(tokenList[i]) > max_seqLen:
             tokenList[i] = tokenList[i][:max_seqLen]
         else:
-            tokenList[i] = tokenList[i] + [0] *( max_seqLen - len(tokenList[i]) )
+            tokenList[i] = tokenList[i] + [0] *( max_seqLen - len(tokenList[i]))
+
+    # finalList = []
+    # for tokens in tokenList:
+    #     for t in tokens:
+    #         finalList.append(t)
 
     dataset = GANDataset(tokenList, labels)
     iter = DataLoader(dataset, batch_size=32, shuffle=True)

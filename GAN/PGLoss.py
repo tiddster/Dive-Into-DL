@@ -19,12 +19,8 @@ class PGLoss(nn.Module):
             - reward : (batch_size, seq_len)
         """
         loss = 0
-        print(reward.shape)
-        print(target.shape)
         for i in range(config.batch_size):
             for j in range(config.generate_seq_len):
                 loss += -pred[i][target[i][j]] * reward[i][j]  # log(P(y_t|Y_1:Y_{t-1})) * Q
-
-        print(loss)
 
         return loss / config.batch_size

@@ -14,13 +14,10 @@ class GeneratorModule(nn.Module):
         super(GeneratorModule, self).__init__()
         self.config = config
         self.pretrain_model = pretrain_model  # 预训练的 LSTMCore
-        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
-        y = self.pretrain_model(x)
-        y_pred = self.pretrain_model.tag_space
-        self.y_preb = self.softmax(y_pred)
-        return self.y_preb
+        scores = self.pretrain_model(x)
+        return scores
 
     def generate(self, start_tokens=None, batch_size=config.batch_size, seq_len=config.generate_seq_len):
         """
@@ -35,23 +32,24 @@ class GeneratorModule(nn.Module):
         for i in range(batch_size):
             if start_tokens is not None:
                 if i < len(start_tokens):
-                    y = start_tokens[i].tolist()
+                    sample_tokens = start_tokens[i].tolist()
                 else:
-                    y = [randint(0, config.vocab_size)]
+                    sample_tokens = [randint(0, config.vocab_size)]
             else:
-                y = [randint(0, config.vocab_size)]
-            y_all_sample = y
+                sample_tokens = [randint(0, config.vocab_size)]
 
             with torch.no_grad():
                 # self.pretrain_model.hidden = self.pretrain_model.init_hidden()
-                for i in range(seq_len - len(y)):
-                    x = torch.tensor(y[-1]).int().view([-1, 1])
-                    y_pred = self.pretrain_model(x)
-                    y_pred = F.softmax(self.pretrain_model.tag_space, dim=1)
-                    y_pred = y_pred.squeeze(dim=0)
-                    y = y_pred.multinomial(num_samples=1)  # 按概率生成下一个字
-                    y_all_sample.append(int(y.tolist()[0]))
-            samples.append(y_all_sample)
+                for j in range(seq_len - len(sample_tokens)):
+                    temp_tokens = sample_tokens + [0] * (config.max_seqLen - len(sample_tokens))
+                    x = torch.tensor(temp_tokens).int()
+                    x = x.unsqueeze(0)
+                    next_token_pred = self.pretrain_model(x)
+                    next_token_pred = F.softmax(self.pretrain_model.output)
+                    next_token_pred = next_token_pred.squeeze(dim=0)
+                    next_token = next_token_pred.multinomial(num_samples=1)  # 按概率生成下一个字
+                    sample_tokens.append(next_token)
+            samples.append(sample_tokens)
         return torch.tensor(samples)
 
 
@@ -60,8 +58,8 @@ class LSTMCore(nn.Module):
         super(LSTMCore, self).__init__()
         self.embedding = nn.Embedding(config.vocab_size, config.embedding_dim)
         self.lstm = nn.LSTM(config.embedding_dim, config.hidden_dim)
-        self.hidden2tag = nn.Linear(config.hidden_dim, config.vocab_size)
-        self.logSoftmax = nn.LogSoftmax(dim=1)
+        self.hidden2tag = nn.Linear(config.hidden_dim* config.max_seqLen, config.vocab_size)
+        self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, input):
         """
@@ -72,13 +70,15 @@ class LSTMCore(nn.Module):
         emb_output = self.embedding(input)
         emb_output = emb_output.transpose(0, 1)
 
+        # lstm_out: [seq_len, batch_size, hidden_dim]
+        lstm_output, (_, _) = self.lstm(emb_output)
         # lstm_out: [batch_size, seq_len, hidden_dim]
-        lstm_output, _ = self.lstm(emb_output)
-        lstm_output = lstm_output.view(input.shape[0] * input.shape[1], -1)
+        lstm_output = lstm_output.transpose(0, 1)
+        lstm_output = lstm_output.reshape(input.shape[0], -1)
 
-        self.tag_space = self.hidden2tag(lstm_output)
-        self.tag_scores = self.logSoftmax(self.tag_space)
-        return self.tag_scores
+        self.output = self.hidden2tag(lstm_output)
+        scores = self.softmax(self.output)
+        return scores
 
 
 def generate_sentences(model, generate_seq_num=100):
