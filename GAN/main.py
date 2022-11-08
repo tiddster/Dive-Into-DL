@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
-from DataProcess import get_iter, pos_path, neg_path, id2word
+from DataProcess import get_iter, pos_path, neg_path, id2word, word2id
 from Generator import GeneratorModule, LSTMCore, generate_sentences
 from Discriminater import DiscriminatorModule
 from PGLoss import PGLoss
@@ -49,7 +49,7 @@ def train_discriminator(data_iter, criterion, optimizer):
             loss.backward()
             optimizer.step()
         avg_loss = total_loss / len(data_iter)
-        print("D---------Epoch {}, train loss: {:.5f}".format(epoch, avg_loss))
+        print("D---------Epoch {}, train loss: {:.8f}".format(epoch, avg_loss))
 
 def train_generator_PG(gen, dis, rollout, pg_loss, optimizer):
     """
@@ -80,18 +80,24 @@ def train_generator_PG(gen, dis, rollout, pg_loss, optimizer):
 
 
 # 打印最终的完整句段和句子所对应的token
-def generate_final_sentences(generator):
-    token_samples = generate_sentences(generator, 200)
+def generate_final_sentences(generator, batch_size=100, tokens=None):
+    token_samples = generator.generate(tokens, batch_size)
     texts = ""
     for tokens in token_samples:
         for token in tokens:
             texts += id2word[token]
         texts += '\n'
 
+    print(texts)
+
     with open(neg_path, 'w', encoding='utf8') as f:
         f.write(texts)
 
-
+def generate_with_hint(generator, hints):
+    idList = [[word2id[h]] for h in hints]
+    idList = torch.tensor(idList).int()
+    print(idList)
+    generate_final_sentences(generator, 4, idList)
 
 if __name__ == '__main__':
     pos_data_iter = get_iter()
@@ -104,12 +110,15 @@ if __name__ == '__main__':
     pg_criterion = PGLoss()
     nll_criterion = nn.NLLLoss()
     cel_criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(params=generator.parameters(), lr=config.generator_lr)
+    nll_optimizer = optim.Adam(params=generator.parameters(), lr=config.generator_nll_lr)
+    pg_optimizer = optim.SGD(params=generator.parameters(), lr=config.generator_pg_lr, momentum=0.9)
     #
-    for i in range(config.epochs_nums):
-        train_generator_NLL(pos_data_iter, nll_criterion, optimizer)
-        train_generator_PG(generator, discriminator, rollout, pg_criterion, optimizer)
+    for i in range(2):
+        train_generator_NLL(pos_data_iter, nll_criterion, nll_optimizer)
+        train_generator_PG(generator, discriminator, rollout, pg_criterion, pg_optimizer)
         generate_final_sentences(generator)
 
         all_data_iter = get_iter(pos_path, neg_path)
-        train_discriminator(all_data_iter, cel_criterion, optimizer)
+        train_discriminator(all_data_iter, cel_criterion, nll_optimizer)
+
+    generate_with_hint(generator, "我爱罗曼")

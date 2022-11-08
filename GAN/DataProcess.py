@@ -1,22 +1,22 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
 
-pos_path = "P:\Dataset\Bilibili\\ComputerOs.txt"
+pos_path = "P:\Dataset\GAN\\ChinesePoem.txt"
 neg_path = "Dataset\\output.txt"
 
-max_seqLen = 30
+max_seqLen = 7
 
 def get_data(path):
     with open(path, 'r', encoding='utf8') as f:
         textList = []
         for text in f.readlines():
-            text = text.replace('\n', '').replace('\ufeff', '')
+            text = text.replace('\n', '').replace('\ufeff', '').replace('1','').replace(' ','').replace('-','')
             textList.append(text)
         return textList
 
 
 def get_vocab(textList):
-    id2word = ['']
+    id2word = []
     for text in textList:
         texts = list(set(text))
         id2word += texts

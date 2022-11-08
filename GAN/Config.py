@@ -1,13 +1,16 @@
 from DataProcess import word2id,max_seqLen
 class Config:
     def __init__(self, vocab_size, max_seqLen):
-        self.vocab_size = vocab_size + 1
+        self.vocab_size = vocab_size
         self.hidden_dim = 100
         self.embedding_dim = 100
 
-        self.generate_seq_len = 30
-        self.n_rollout = 1
-        self.generator_lr = 0.0001
+        self.n_rollout = 2
+
+        self.generate_seq_len = max_seqLen
+
+        self.generator_nll_lr = 0.00005
+        self.generator_pg_lr = 0.001
 
         self. max_seqLen = max_seqLen
 
