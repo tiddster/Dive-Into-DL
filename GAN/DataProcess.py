@@ -1,10 +1,10 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
 
-pos_path = "P:\Dataset\GAN\\ChinesePoem.txt"
+pos_path = "P:\Dataset\\Bilibili\ComputerOs.txt"
 neg_path = "Dataset\\output.txt"
 
-max_seqLen = 7
+max_seqLen = 15
 
 def get_data(path):
     with open(path, 'r', encoding='utf8') as f:

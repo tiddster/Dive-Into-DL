@@ -42,7 +42,7 @@ class GeneratorModule(nn.Module):
                 # self.pretrain_model.hidden = self.pretrain_model.init_hidden()
                 for j in range(seq_len - len(sample_tokens)):
                     temp_tokens = sample_tokens + [0] * (config.max_seqLen - len(sample_tokens))
-                    mask = [1] * len(sample_tokens) + [0] * (config.max_seqLen - len(sample_tokens))
+                    mask = [0] * len(sample_tokens) + [1] * (config.max_seqLen - len(sample_tokens))
                     mask = torch.tensor(mask).bool()
                     x = torch.tensor(temp_tokens).int()
                     x = x.unsqueeze(0)
@@ -107,7 +107,7 @@ class LSTMCore(nn.Module):
         # lstm_out: [batch_size, seq_len, hidden_dim]
         lstm_output = lstm_output.transpose(0, 1)
         # context: [batch, hidden_dim]
-        context, _ = self.Attenion(lstm_output, h)
+        context, _ = self.Attenion(lstm_output, h, mask)
 
         # output: [batch_size, vocab_size]
         self.output = self.hidden2tag(context)

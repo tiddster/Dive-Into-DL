@@ -111,9 +111,9 @@ if __name__ == '__main__':
     nll_criterion = nn.NLLLoss()
     cel_criterion = nn.CrossEntropyLoss()
     nll_optimizer = optim.Adam(params=generator.parameters(), lr=config.generator_nll_lr)
-    pg_optimizer = optim.SGD(params=generator.parameters(), lr=config.generator_pg_lr, momentum=0.9)
+    pg_optimizer = optim.Adam(params=generator.parameters(), lr=config.generator_pg_lr)
     #
-    for i in range(2):
+    for i in range(8):
         train_generator_NLL(pos_data_iter, nll_criterion, nll_optimizer)
         train_generator_PG(generator, discriminator, rollout, pg_criterion, pg_optimizer)
         generate_final_sentences(generator)
