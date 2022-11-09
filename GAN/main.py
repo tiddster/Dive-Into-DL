@@ -13,6 +13,7 @@ from Config import config
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+
 def train_generator_NLL(data_iter, criterion, optimizer):
     """
     单纯使用真实数据训练生成器
@@ -31,7 +32,7 @@ def train_generator_NLL(data_iter, criterion, optimizer):
             loss.backward()
             optimizer.step()
         avg_loss = total_loss / len(data_iter)
-        print("G---------Epoch {}, train loss: {:.5f}".format(epoch, avg_loss))
+        print("G---------Epoch {}, train loss: {:.8f}".format(epoch, avg_loss))
 
 
 def train_discriminator(data_iter, criterion, optimizer):
@@ -50,6 +51,7 @@ def train_discriminator(data_iter, criterion, optimizer):
             optimizer.step()
         avg_loss = total_loss / len(data_iter)
         print("D---------Epoch {}, train loss: {:.8f}".format(epoch, avg_loss))
+
 
 def train_generator_PG(gen, dis, rollout, pg_loss, optimizer):
     """
@@ -93,14 +95,18 @@ def generate_final_sentences(generator, batch_size=100, tokens=None):
     with open(neg_path, 'w', encoding='utf8') as f:
         f.write(texts)
 
+
 def generate_with_hint(generator, hints):
     idList = [[word2id[h]] for h in hints]
     idList = torch.tensor(idList).int()
     print(idList)
     generate_final_sentences(generator, 4, idList)
 
+
 if __name__ == '__main__':
+    print("读取数据中")
     pos_data_iter = get_iter()
+    print("读取数据完成")
 
     lstm = LSTMCore(config)
     generator = GeneratorModule(lstm, config)
@@ -113,7 +119,7 @@ if __name__ == '__main__':
     nll_optimizer = optim.Adam(params=generator.parameters(), lr=config.generator_nll_lr)
     pg_optimizer = optim.Adam(params=generator.parameters(), lr=config.generator_pg_lr)
     #
-    for i in range(8):
+    for i in range(5):
         train_generator_NLL(pos_data_iter, nll_criterion, nll_optimizer)
         train_generator_PG(generator, discriminator, rollout, pg_criterion, pg_optimizer)
         generate_final_sentences(generator)

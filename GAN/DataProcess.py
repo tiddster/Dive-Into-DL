@@ -1,16 +1,50 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
+import os
+import json
 
 pos_path = "P:\Dataset\\Bilibili\ComputerOs.txt"
+json_path = "P:\Dataset\ChinesePoetry\poetry"
 neg_path = "Dataset\\output.txt"
 
-max_seqLen = 15
+max_seqLen = 7
+
+
+def get_json_data(path=json_path):
+    fileNames = get_json_file_name(path)
+    textList = []
+    for name in fileNames:
+        data = get_json_single_data(name)
+        text = ''
+        for d in data:
+            if d == '，' or d == '。' or d == '.' or d == '？':
+                textList.append(text)
+                text = ''
+            else:
+                text += d
+    return textList
+
+
+def get_json_single_data(json_file):
+    fullPath = json_path + f'\\{json_file}'
+    f = open(fullPath, 'r', encoding='utf8')
+    json_data = json.load(f)
+    return json_data['content'].replace('<br>','').replace(' ','').replace('《','').replace('》','')\
+        .replace('；','').replace('！','').replace('“','').replace('”','').replace('：','').replace('\u3000','')\
+        .replace('<p>', '').replace('</p>','').replace('、','').replace('<divid="shicineirong"class="shicineirong">', '')\
+        .replace('’','').replace('‘','')
+
+
+def get_json_file_name(path=json_path):
+    fileName = os.listdir(path)
+    return fileName
+
 
 def get_data(path):
     with open(path, 'r', encoding='utf8') as f:
         textList = []
         for text in f.readlines():
-            text = text.replace('\n', '').replace('\ufeff', '').replace('1','').replace(' ','').replace('-','')
+            text = text.replace('\n', '').replace('\ufeff', '').replace('1', '').replace(' ', '').replace('-', '')
             textList.append(text)
         return textList
 
@@ -31,14 +65,16 @@ def get_token(textList, word2id):
     for text in textList:
         tokens = []
         for t in text:
-            tokens.append(word2id[t])
+            if t != '.' or '\\u' in t :
+                tokens.append(word2id[t])
         tokenList.append(tokens)
     return tokenList
 
 
-id2word, word2id = get_vocab(get_data(pos_path))
+id2word, word2id = get_vocab(get_json_data(json_path))
 
-def get_iter(pos_path=pos_path, neg_path=None):
+
+def get_iter(pos_path=json_path, neg_path=None):
     if neg_path:
         neg_text_list = get_data(neg_path)
         neg_labels = [0 for _ in range(len(neg_text_list))]
@@ -46,18 +82,19 @@ def get_iter(pos_path=pos_path, neg_path=None):
         neg_text_list = []
         neg_labels = []
 
-    pos_text_list = get_data(pos_path)
+    pos_text_list = get_json_file_name(json_path)
     pos_labels = [1 for _ in range(len(pos_text_list))]
 
     textList = pos_text_list + neg_text_list
     labels = pos_labels + neg_labels
 
     tokenList = get_token(textList, word2id)
+
     for i in range(len(tokenList)):
         if len(tokenList[i]) > max_seqLen:
             tokenList[i] = tokenList[i][:max_seqLen]
         else:
-            tokenList[i] = tokenList[i] + [0] *( max_seqLen - len(tokenList[i]))
+            tokenList[i] = tokenList[i] + [0] * (max_seqLen - len(tokenList[i]))
 
     # finalList = []
     # for tokens in tokenList:
