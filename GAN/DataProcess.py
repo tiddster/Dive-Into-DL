@@ -7,13 +7,13 @@ pos_path = "P:\Dataset\\Bilibili\ComputerOs.txt"
 json_path = "P:\Dataset\ChinesePoetry\poetry"
 neg_path = "Dataset\\output.txt"
 
-max_seqLen = 7
+max_seqLen = 5
 
 
 def get_json_data(path=json_path):
     fileNames = get_json_file_name(path)
     textList = []
-    for name in fileNames:
+    for name in fileNames[:1000]:
         data = get_json_single_data(name)
         text = ''
         for d in data:
@@ -32,7 +32,7 @@ def get_json_single_data(json_file):
     return json_data['content'].replace('<br>','').replace(' ','').replace('《','').replace('》','')\
         .replace('；','').replace('！','').replace('“','').replace('”','').replace('：','').replace('\u3000','')\
         .replace('<p>', '').replace('</p>','').replace('、','').replace('<divid="shicineirong"class="shicineirong">', '')\
-        .replace('’','').replace('‘','')
+        .replace('’','').replace('‘','').replace('_','')
 
 
 def get_json_file_name(path=json_path):
@@ -50,7 +50,7 @@ def get_data(path):
 
 
 def get_vocab(textList):
-    id2word = []
+    id2word = ['<pad>']
     for text in textList:
         texts = list(set(text))
         id2word += texts
@@ -65,7 +65,7 @@ def get_token(textList, word2id):
     for text in textList:
         tokens = []
         for t in text:
-            if t != '.' or '\\u' in t :
+            if t != '.' and '\\u' not in t and t != '_':
                 tokens.append(word2id[t])
         tokenList.append(tokens)
     return tokenList
@@ -82,13 +82,14 @@ def get_iter(pos_path=json_path, neg_path=None):
         neg_text_list = []
         neg_labels = []
 
-    pos_text_list = get_json_file_name(json_path)
+    pos_text_list = get_json_data(json_path)
     pos_labels = [1 for _ in range(len(pos_text_list))]
 
     textList = pos_text_list + neg_text_list
     labels = pos_labels + neg_labels
 
     tokenList = get_token(textList, word2id)
+    print(len(tokenList))
 
     for i in range(len(tokenList)):
         if len(tokenList[i]) > max_seqLen:

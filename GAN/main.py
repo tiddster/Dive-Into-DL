@@ -61,7 +61,7 @@ def train_generator_PG(gen, dis, rollout, pg_loss, optimizer):
     """
     for epoch in range(config.epochs_nums):
         # construct the input to the genrator, add zeros before samples and delete the last column
-        samples = generator.generate(batch_size=config.batch_size, seq_len=config.generate_seq_len)
+        samples = generator.generate(generate_name=config.generate_num, seq_len=config.generate_seq_len)
         # zeros = torch.zeros(config.batch_size, 1, dtype=torch.int64)
         # zeros = zeros.to(device)
 
@@ -82,8 +82,8 @@ def train_generator_PG(gen, dis, rollout, pg_loss, optimizer):
 
 
 # 打印最终的完整句段和句子所对应的token
-def generate_final_sentences(generator, batch_size=100, tokens=None):
-    token_samples = generator.generate(tokens, batch_size)
+def generate_final_sentences(generator, generate_num=config.generate_num, tokens=None):
+    token_samples = generator.generate(tokens, generate_num)
     texts = ""
     for tokens in token_samples:
         for token in tokens:

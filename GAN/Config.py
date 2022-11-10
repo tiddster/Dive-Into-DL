@@ -10,13 +10,14 @@ class Config:
 
         self.generate_seq_len = max_seqLen
 
-        self.generator_nll_lr = 0.00005
+        self.generator_nll_lr = 0.00001
         self.generator_pg_lr = 0.001
 
         self. max_seqLen = max_seqLen
 
         self.epochs_nums = 5
         self.batch_size = 64
+        self.generate_num = 5000
 
         self.update_rater = 0.8
 

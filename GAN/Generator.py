@@ -19,17 +19,17 @@ class GeneratorModule(nn.Module):
         scores = self.pretrain_model(x)
         return scores
 
-    def generate(self, start_tokens=None, batch_size=config.batch_size, seq_len=config.generate_seq_len):
+    def generate(self, start_tokens=None, generate_name=config.generate_num, seq_len=config.generate_seq_len):
         """
         这个函数没有开头的首字提示，在词汇表中随机寻找一个成为首字，进行随机生成序列以测试
         将y初始化为一个序列，和下面test函数保持一致
         :param start_tokens: (<=batch_size,   n),  n为每一个batch所拥有序列长度, 小于batch_size的那部分由模型自动生成
-        :param batch_size:
+        :param generate_name:
         :param seq_len:
         :return:
         """
         samples = []
-        for i in range(batch_size):
+        for i in range(generate_name):
             if start_tokens is not None:
                 if i < len(start_tokens):
                     sample_tokens = start_tokens[i].tolist()
