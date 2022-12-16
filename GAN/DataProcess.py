@@ -2,8 +2,9 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 import os
 import json
+import re
 
-pos_path = "P:\Dataset\\Bilibili\ComputerOs.txt"
+pos_path = "P:\Dataset\ChinesePoetry\poetry"
 json_path = "P:\Dataset\ChinesePoetry\poetry"
 neg_path = "Dataset\\output.txt"
 
@@ -13,7 +14,7 @@ max_seqLen = 5
 def get_json_data(path=json_path):
     fileNames = get_json_file_name(path)
     textList = []
-    for name in fileNames[:1000]:
+    for name in fileNames[:2000]:
         data = get_json_single_data(name)
         text = ''
         for d in data:
@@ -54,7 +55,6 @@ def get_vocab(textList):
     for text in textList:
         texts = list(set(text))
         id2word += texts
-
     id2word = list(set(id2word))
     word2id = {word: i for i, word in enumerate(id2word)}
     return id2word, word2id
@@ -64,6 +64,7 @@ def get_token(textList, word2id):
     tokenList = []
     for text in textList:
         tokens = []
+        text = re.sub('[a-zA-Z]', '', text)
         for t in text:
             if t != '.' and '\\u' not in t and t != '_':
                 tokens.append(word2id[t])
@@ -82,14 +83,14 @@ def get_iter(pos_path=json_path, neg_path=None):
         neg_text_list = []
         neg_labels = []
 
-    pos_text_list = get_json_data(json_path)
+    pos_text_list = get_json_data(pos_path)
     pos_labels = [1 for _ in range(len(pos_text_list))]
 
     textList = pos_text_list + neg_text_list
     labels = pos_labels + neg_labels
 
     tokenList = get_token(textList, word2id)
-    print(len(tokenList))
+    # print(len(tokenList))
 
     for i in range(len(tokenList)):
         if len(tokenList[i]) > max_seqLen:

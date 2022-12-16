@@ -21,6 +21,5 @@ class PGLoss(nn.Module):
         loss = 0
         for i in range(config.batch_size):
             for j in range(config.generate_seq_len):
-                loss += -pred[i][target[i][j]] * reward[i][j]  # log(P(y_t|Y_1:Y_{t-1})) * Q
-
+                loss += pred[i][target[i][j]] * reward[i][j]  # log(P(y_t|Y_1:Y_{t-1})) * Q
         return loss / config.batch_size

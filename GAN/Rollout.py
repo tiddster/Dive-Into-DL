@@ -34,15 +34,18 @@ class Rollout(object):
                     rewards.append(pred)
                 else:
                     rewards[l-1] += pred
+                # print(f"{i}    {l}   {pred}   {rewards}")
 
-            # for the last token
+            # 计算最后一个字的reward
             pred = discriminator(x)
             pred = pred.cpu().data[:, 1].numpy()
             if i == 0:
                 rewards.append(pred)
             else:
                 rewards[seq_len-1] += pred
+            # print(f"{i}    {pred}   {rewards}")
         rewards = np.transpose(np.array(rewards)) / (1.0 * num) # batch_size * seq_len
+        # print(rewards)
         return rewards
 
     def update_params(self):
