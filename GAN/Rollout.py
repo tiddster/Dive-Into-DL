@@ -48,6 +48,44 @@ class Rollout(object):
         # print(rewards)
         return rewards
 
+    def get_reward2(self, x, num, discriminator):
+        """
+        Inputs: x, num, discriminator
+            - x: (batch_size, seq_len) input data
+            - num: rollout number
+            - discriminator: discrimanator model
+        """
+        rewards = []
+        batch_size = x.size(0)
+        seq_len = x.size(1)
+        for i in range(num):
+            for l in range(1, seq_len):
+                data = x[:, 0:l]
+                samples = self.own_model.generate(data, batch_size, seq_len)
+                pred = discriminator(samples)
+                pred = pred.cpu().data[:,1].numpy()
+                if i == 0:
+                    rewards.append(pred)
+                else:
+                    if pred.sum() > rewards[l-1].sum():
+                        rewards[l-1] = pred
+                        x[:, l] = samples[:, l]
+                # print(f"{i}    {l}   {pred}   {rewards}")
+
+            # 计算最后一个字的reward
+            pred = discriminator(samples)
+            pred = pred.cpu().data[:, 1].numpy()
+
+            if i == 0:
+                rewards.append(pred)
+            else:
+                if pred.sum() > rewards[seq_len-1].sum():
+                    rewards[seq_len - 1] = pred
+                    x[:, seq_len-1] = samples[:, seq_len-1]
+            # print(f"{i}    {pred}   {rewards}")
+        # print(rewards)
+        return rewards, x
+
     def update_params(self):
         dic = {}
         for name, param in self.ori_model.named_parameters():

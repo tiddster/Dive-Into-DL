@@ -22,23 +22,22 @@ def train_generator_NLL(data_iter, criterion, optimizer):
     单纯使用真实数据训练生成器
     """
     loss_list = []
-    for epoch in range(5):
-        total_loss = 0.
-        for data, labels in data_iter:
-            data, labels = data.to(device), labels.to(device)
-            labels = labels.contiguous().view(-1)
-            output = generator(data)
-            loss = criterion(output, labels)
-            loss.requires_grad_(True)
-            total_loss += loss.item()
+    total_loss = 0.
+    for data, labels in data_iter:
+        data, labels = data.to(device), labels.to(device)
+        labels = labels.contiguous().view(-1)
+        output = generator(data)
+        loss = criterion(output, labels)
+        loss.requires_grad_(True)
+        total_loss += loss.item()
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        avg_loss = total_loss / len(data_iter)
-        loss_list.append(avg_loss)
-        print(f"G---------epoch: {epoch}  train loss: {avg_loss:.8f}")
-    return loss_list
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    avg_loss = total_loss / len(data_iter)
+    loss_list.append(avg_loss)
+    print(f"G---------train loss: {avg_loss:.8f}")
+    return avg_loss
 
 
 def train_discriminator(data_iter, criterion, optimizer):
@@ -67,8 +66,9 @@ def train_discriminator(data_iter, criterion, optimizer):
         loss.backward()
         optimizer.step()
     avg_loss = total_loss / len(data_iter)
-    print(f"D---------train loss: {avg_loss:.8f}, d_acc: {d_acc/total*100:2f}%, g_win: {g_win/g_total*100:0.2f}%")
-    return avg_loss
+    print(
+        f"D---------train loss: {avg_loss:.8f}, d_acc: {d_acc / total * 100:2f}%, g_win: {g_win / g_total * 100:0.2f}%")
+    return avg_loss, g_win / g_total * 100, d_acc / total * 100
 
 
 def train_generator_PG(gen, dis, rollout, pg_loss, optimizer):
@@ -86,24 +86,26 @@ def train_generator_PG(gen, dis, rollout, pg_loss, optimizer):
     targets = samples
 
     # calculate the reward
-    rewards = torch.tensor(rollout.get_reward(samples, config.n_rollout, dis))
-    rewards = rewards.to(device)
+    Qvalue, x = rollout.get_reward2(samples, config.n_rollout, dis)
+    Qvalue = torch.tensor(Qvalue)
+    Qvalue = Qvalue.transpose(0, 1)
+    Qvalue = Qvalue.to(device)
+
+    sample_num, samples_len = Qvalue.shape
+    Qvalue_sum = Qvalue.sum(dim=1)
+    Qvalue_sum = Qvalue_sum.sum().item()
+    Q_avg = Qvalue_sum / sample_num
 
     # update generator
     output = gen(inputs)
-    rewards_loss = pg_loss(output, targets, rewards)
-
-    sample_num, samples_len = rewards.shape
-    rewards_sum = rewards.sum(dim=1)
-    rewards_sum = rewards_sum.sum().item()
-    rewards_avg = rewards_sum / sample_num
+    rewards_loss = pg_loss(output, targets, Qvalue)
 
     optimizer.zero_grad()
     rewards_loss.backward()
     optimizer.step()
-    print(f"GD--------- train loss: {rewards_loss:.5f}, rewards: {rewards_avg:.4f}")
+    print(f"GD--------- train loss: {rewards_loss:.5f}, rewards: {Q_avg:.4f}")
 
-    return rewards_loss.item()
+    return rewards_loss.item(), Q_avg
 
 
 # 打印最终的完整句段和句子所对应的token
@@ -128,16 +130,25 @@ def generate_with_hint(generator, hints):
     generate_final_sentences(generator, 4, idList)
 
 
-def polt_losses(rewardsList, GLossList, DLossList):
+def polt_losses(rewardsList, QList, GLossList, DLossList, GwinList, DAccList):
     x = range(0, len(rewardsList), 1)
 
     plt.plot(x, rewardsList)
+    plt.show()
+
+    plt.plot(x, QList)
     plt.show()
 
     plt.plot(x, GLossList)
     plt.show()
 
     plt.plot(x, DLossList)
+    plt.show()
+
+    plt.plot(x, GwinList)
+    plt.show()
+
+    plt.plot(x, DAccList)
     plt.show()
 
 
@@ -158,24 +169,36 @@ if __name__ == '__main__':
     pg_optimizer = optim.Adam(params=generator.parameters(), lr=config.generator_pg_lr)
     discriminator_optimizer = optim.Adam(params=discriminator.parameters(), lr=config.generator_nll_lr)
 
-    rewardsList = []
+    _ = train_generator_NLL(pos_data_iter, nll_criterion, nll_optimizer)
+    generate_final_sentences(generator)
+    all_data_iter = get_iter(pos_path, neg_path)
+    _ = train_discriminator(all_data_iter, cel_criterion, discriminator_optimizer)
+
+    rewardsLossList = []
+    QList = []
     GLossList = []
     DLossList = []
-    for i in range(10):
+    GwinList = []
+    DAccList = []
+    for i in range(3):
         start = time.time()
         GLoss = train_generator_NLL(pos_data_iter, nll_criterion, nll_optimizer)
-        GLossList += GLoss
+        GLossList.append(GLoss)
 
-        rewards = train_generator_PG(generator, discriminator, rollout, pg_criterion, pg_optimizer)
-        rewardsList.append(-rewards)
+        rewardsLoss, QValue = train_generator_PG(generator, discriminator, rollout, pg_criterion, pg_optimizer)
+        rewardsLossList.append(-rewardsLoss)
+        QList.append(QValue)
+
         generate_final_sentences(generator)
 
         all_data_iter = get_iter(pos_path, neg_path)
-        DLoss = train_discriminator(all_data_iter, cel_criterion, discriminator_optimizer)
+        DLoss, g_win, d_acc = train_discriminator(all_data_iter, cel_criterion, discriminator_optimizer)
         DLossList.append(DLoss)
+        GwinList.append(g_win)
+        DAccList.append(d_acc)
 
         end = time.time()
-        print(f"epoch: {i}, time: {end-start}")
+        print(f"epoch: {i}, time: {end - start}")
 
     generate_with_hint(generator, "机器学习")
-    polt_losses(rewardsList, GLossList, DLossList)
+    polt_losses(rewardsLossList, QList, GLossList, DLossList, GwinList, DAccList)
