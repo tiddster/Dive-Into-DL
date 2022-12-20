@@ -12,8 +12,8 @@ class Config:
 
         self.generate_seq_len = max_seqLen
 
-        self.generator_nll_lr = 0.00001
-        self.generator_pg_lr = 0.001
+        self.generator_nll_lr = 1e-5
+        self.generator_pg_lr = 1e-3
 
         self. max_seqLen = max_seqLen
 
@@ -23,8 +23,8 @@ class Config:
 
         self.update_rater = 0.8
 
-        self.num_filters = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
-        self.filter_sizes = [3, 5, 5, 5, 5, 3, 3, 3, 3, 3, 5, 5]
+        # self.num_filters = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+        # self.filter_sizes = [3, 5, 5, 5, 5, 3, 3, 3, 3, 3, 5, 5]
 
         self.dropout = 0.1
 

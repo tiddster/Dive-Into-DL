@@ -134,25 +134,39 @@ def polt_losses(rewardsList, QList, GLossList, DLossList, GwinList, DAccList):
     x = range(0, len(rewardsList), 1)
 
     plt.plot(x, rewardsList)
+    plt.xlabel("epochs")
+    plt.ylabel("策略梯度函数损失值")
     plt.show()
 
     plt.plot(x, QList)
+    plt.xlabel("epochs")
+    plt.ylabel("价值组Q平均值")
     plt.show()
 
     plt.plot(x, GLossList)
+    plt.xlabel("epochs")
+    plt.ylabel("生成器训练损失值")
     plt.show()
 
     plt.plot(x, DLossList)
+    plt.xlabel("epochs")
+    plt.ylabel("鉴定器训练损失值")
     plt.show()
 
     plt.plot(x, GwinList)
+    plt.xlabel("epochs")
+    plt.ylabel("生成器“欺骗”成功率")
     plt.show()
 
     plt.plot(x, DAccList)
+    plt.xlabel("epochs")
+    plt.ylabel("鉴定器鉴定正确率")
     plt.show()
 
 
 if __name__ == '__main__':
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+
     print("读取数据中")
     pos_data_iter = get_iter()
     print("读取数据完成")
@@ -174,13 +188,14 @@ if __name__ == '__main__':
     all_data_iter = get_iter(pos_path, neg_path)
     _ = train_discriminator(all_data_iter, cel_criterion, discriminator_optimizer)
 
+
     rewardsLossList = []
     QList = []
     GLossList = []
     DLossList = []
     GwinList = []
     DAccList = []
-    for i in range(3):
+    for i in range(100):
         start = time.time()
         GLoss = train_generator_NLL(pos_data_iter, nll_criterion, nll_optimizer)
         GLossList.append(GLoss)
